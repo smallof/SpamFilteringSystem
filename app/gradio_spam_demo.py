@@ -6,7 +6,12 @@ import joblib
 import numpy as np
 import pandas as pd
 
-MODEL_PATH = Path("artifacts/tfidf_logreg_pipeline.joblib")
+from db.database import save_comment, save_classification
+
+# MODEL_PATH = Path("artifacts/tfidf_logreg_pipeline.joblib")
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_PATH = BASE_DIR / "artifacts" / "tfidf_logreg_pipeline.joblib"
 
 if not MODEL_PATH.exists():
     raise FileNotFoundError(
@@ -156,7 +161,12 @@ def predict_message(text: str):
     ham_proba = float(proba[0])
     spam_proba = float(proba[1])
 
+    print(ham_proba)
+
     label = "SPAM" if pred == 1 else "HAM"
+
+    save_comm = save_comment(text, label) # збереження інформації про коментар в БД
+    save_classification(save_comm, spam_proba * 100, ham_proba * 100, label)
 
     explanation_df = extract_feature_contributions(text, top_n=10)
     summary_html = build_summary_html(label, spam_proba, ham_proba, text)
@@ -523,5 +533,8 @@ with gr.Blocks(
         outputs=[text_input, result_html, confidence_html, explanation_table],
     )
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+#     demo.launch()
+    
+def run():
     demo.launch()
